@@ -26,6 +26,14 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.security.KeyStore;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+
 import static org.opencb.commons.datastore.mongodb.MongoDBConfiguration.*;
 
 /**
@@ -126,6 +134,31 @@ public class MongoDataStoreManager implements AutoCloseable {
             if (mongoDBConfiguration.getBoolean(SSL_ENABLED)) {
                 logger.debug("SSL connections enabled for " + database);
                 builder = builder.sslEnabled(mongoDBConfiguration.getBoolean(SSL_ENABLED));
+                if (mongoDBConfiguration.getString(SSL_CA_FILE) != null) {
+                    logger.debug("SSL CA File enabled for " + database);
+
+                    try {
+                        String fileName = mongoDBConfiguration.getString(SSL_CA_FILE);
+                        InputStream is = new FileInputStream(fileName);
+
+                        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+                        X509Certificate caCert = (X509Certificate) cf.generateCertificate(is);
+
+                        TrustManagerFactory tmf = TrustManagerFactory
+                                .getInstance(TrustManagerFactory.getDefaultAlgorithm());
+                        KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+                        ks.load(null);
+                        ks.setCertificateEntry("caCert", caCert);
+
+                        tmf.init(ks);
+
+                        SSLContext sslContext = SSLContext.getInstance("TLS");
+                        sslContext.init(null, tmf.getTrustManagers(), null);
+                        builder.sslContext(sslContext);
+                    } catch (Exception e) {
+                        logger.error(e.getMessage());
+                    }
+                }
             }
 
             mongoClientOptions = builder.build();
