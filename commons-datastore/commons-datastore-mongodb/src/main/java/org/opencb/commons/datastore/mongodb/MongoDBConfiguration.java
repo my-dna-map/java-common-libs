@@ -41,6 +41,7 @@ public class MongoDBConfiguration extends ObjectMap {
     public static final int CONNECTIONS_PER_HOST_DEFAULT = 20;
     public static final String SSL_ENABLED = "sslEnabled";
     public static final Boolean SSL_ENABLED_DEFAULT = false;
+    public static final String SSL_CA_FILE = "sslCAFile";
 
     public enum ReadPreference {
         PRIMARY("primary"),
@@ -147,6 +148,11 @@ public class MongoDBConfiguration extends ObjectMap {
 
         public Builder setSslEnabled(Boolean enabled) {
             optionsMap.put(SSL_ENABLED, enabled);
+            return this;
+        }
+
+        public Builder setSslCaFile(String sslCAFile) {
+            optionsMap.put(SSL_CA_FILE, sslCAFile);
             return this;
         }
 
